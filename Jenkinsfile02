@@ -1,26 +1,37 @@
 pipeline {
     agent any
 
-    // Disable the automatic checkout done by Declarative Pipeline
+    // Disable the automatic checkout so we can control it ourselves.
     options {
         skipDefaultCheckout(true)
+    }
+
+    // Define build parameters that the user will input.
+    parameters {
+        string(name: 'DISK_NAME', defaultValue: 'disk1', description: 'Name of the disk')
+        string(name: 'MACHINE_NAME', defaultValue: 'machine1', description: 'Name of the machine')
+        string(name: 'TARGET_GB', defaultValue: '100', description: 'Target size in GB')
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Force checkout of the main branch
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "refs/heads/main"]],
-                    userRemoteConfigs: [[url: 'https://github.com/EduardUsatchev/DevOps1302.git']]
-                ])
+                script {
+                    // Force checkout of the main branch from the repository.
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: 'refs/heads/main']],
+                        userRemoteConfigs: [[url: 'https://github.com/EduardUsatchev/DevOps1302.git']]
+                    ])
+                    // Ensure we're on the main branch rather than a detached HEAD.
+                    sh 'git checkout main'
+                }
             }
         }
         stage('Determine Branch') {
             steps {
                 script {
-                    // Now that we've forced checkout of main, this should return "main"
+                    // Retrieve the current branch name.
                     def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     echo "Current branch: ${branch}"
                     env.BRANCH_NAME = branch
@@ -28,9 +39,15 @@ pipeline {
             }
         }
         stage('Run Script') {
+            // Pass the user-input parameters as environment variables so that your Python script can access them.
+            environment {
+                DISK_NAME   = "${params.DISK_NAME}"
+                MACHINE_NAME = "${params.MACHINE_NAME}"
+                TARGET_GB   = "${params.TARGET_GB}"
+            }
             steps {
                 script {
-                    // Use branch-based logic to determine which steps to run
+                    // Branch-based logic: on main, run normally; on feature branches, run then fail.
                     if (env.BRANCH_NAME == 'main') {
                         echo "Running resizedisk.py on main branch..."
                         sh 'python resizedisk.py'
