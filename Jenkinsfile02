@@ -1,16 +1,14 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'DISK_NAME', defaultValue: 'disk1', description: 'Name of the disk')
-        string(name: 'MACHINE_NAME', defaultValue: 'machine1', description: 'Name of the machine')
-        string(name: 'TARGET_GB', defaultValue: '100', description: 'Target size in GB')
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout([
+                  $class: 'GitSCM',
+                  branches: [[name: '*/main']],
+                  userRemoteConfigs: [[url: 'https://github.com/EduardUsatchev/DevOps1302.git']]
+                ])
             }
         }
         stage('Determine Branch') {
@@ -19,22 +17,14 @@ pipeline {
                     def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     echo "Current branch: ${branch}"
                     env.BRANCH_NAME = branch
-                    }
                 }
             }
-
+        }
         stage('Run Script') {
-            environment {
-                // Map the user parameters to environment variables that your script will read.
-                DISK_NAME = "${params.DISK_NAME}"
-                MACHINE_NAME = "${params.MACHINE_NAME}"
-                TARGET_GB = "${params.TARGET_GB}"
-            }
             steps {
                 script {
-                    // Branch-specific logic
                     if (env.BRANCH_NAME == 'main') {
-                        echo "Running resizedisk.py on master branch..."
+                        echo "Running resizedisk.py on main branch..."
                         sh 'python resizedisk.py'
                     } else if (env.BRANCH_NAME?.startsWith("feature")) {
                         echo "Running resizedisk.py on a feature branch..."
