@@ -1,19 +1,26 @@
 pipeline {
     agent any
 
+    // Disable the automatic checkout done by Declarative Pipeline
+    options {
+        skipDefaultCheckout(true)
+    }
+
     stages {
         stage('Checkout') {
             steps {
+                // Force checkout of the main branch
                 checkout([
-                  $class: 'GitSCM',
-                  branches: [[name: '*/main']],
-                  userRemoteConfigs: [[url: 'https://github.com/EduardUsatchev/DevOps1302.git']]
+                    $class: 'GitSCM',
+                    branches: [[name: "refs/heads/main"]],
+                    userRemoteConfigs: [[url: 'https://github.com/EduardUsatchev/DevOps1302.git']]
                 ])
             }
         }
         stage('Determine Branch') {
             steps {
                 script {
+                    // Now that we've forced checkout of main, this should return "main"
                     def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     echo "Current branch: ${branch}"
                     env.BRANCH_NAME = branch
@@ -23,6 +30,7 @@ pipeline {
         stage('Run Script') {
             steps {
                 script {
+                    // Use branch-based logic to determine which steps to run
                     if (env.BRANCH_NAME == 'main') {
                         echo "Running resizedisk.py on main branch..."
                         sh 'python resizedisk.py'
