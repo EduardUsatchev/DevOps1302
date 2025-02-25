@@ -13,6 +13,16 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Determine Branch') {
+            steps {
+                script {
+                    def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    echo "Current branch: ${branch}"
+                    env.BRANCH_NAME = branch
+                    }
+                }
+            }
+
         stage('Run Script') {
             environment {
                 // Map the user parameters to environment variables that your script will read.
