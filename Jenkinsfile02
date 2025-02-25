@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    // Use the Jenkins Tools feature to ensure Python is installed.
+    // Make sure you have configured a Python installation named "Python3" in Jenkins.
+    tools {
+        python 'Python3'
+    }
+
     options {
         skipDefaultCheckout(true)
     }
@@ -15,7 +21,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    // Checkout the main branch from the Git repository.
+                    // Force checkout of the main branch from the Git repository.
                     checkout([
                         $class: 'GitSCM',
                         branches: [[name: 'refs/heads/main']],
@@ -28,7 +34,7 @@ pipeline {
         stage('Determine Branch') {
             steps {
                 script {
-                    // Retrieve and echo the current branch.
+                    // Retrieve the current branch name.
                     def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     echo "Current branch: ${branch}"
                     env.BRANCH_NAME = branch
@@ -37,20 +43,20 @@ pipeline {
         }
         stage('Run Script') {
             environment {
-                // Pass the user-input parameters to the environment so that resizedisk.py can access them.
+                // Pass the user-input parameters as environment variables so that resizedisk.py can access them.
                 DISK_NAME    = "${params.DISK_NAME}"
                 MACHINE_NAME = "${params.MACHINE_NAME}"
                 TARGET_GB    = "${params.TARGET_GB}"
             }
             steps {
                 script {
-                    // Based on the branch, either run normally or trigger an intentional failure.
                     if (env.BRANCH_NAME == 'main') {
                         echo "Running resizedisk.py on main branch..."
-                        sh 'python3 resizedisk.py'
+                        // "python" should now refer to the Python installation provided by the tools directive.
+                        sh 'python resizedisk.py'
                     } else if (env.BRANCH_NAME?.startsWith("feature")) {
                         echo "Running resizedisk.py on a feature branch..."
-                        sh 'python3 resizedisk.py'
+                        sh 'python resizedisk.py'
                         error("Intentional failure for feature branch")
                     } else {
                         echo "Branch ${env.BRANCH_NAME} does not trigger any specific action."
