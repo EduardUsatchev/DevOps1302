@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.9'
-            args '-u root'
-        }
-    }
+    agent any
 
     options {
         skipDefaultCheckout(true)
@@ -20,6 +15,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
+                    // Checkout the main branch from the Git repository.
                     checkout([
                         $class: 'GitSCM',
                         branches: [[name: 'refs/heads/main']],
@@ -32,6 +28,7 @@ pipeline {
         stage('Determine Branch') {
             steps {
                 script {
+                    // Retrieve and echo the current branch.
                     def branch = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                     echo "Current branch: ${branch}"
                     env.BRANCH_NAME = branch
@@ -40,12 +37,14 @@ pipeline {
         }
         stage('Run Script') {
             environment {
-                DISK_NAME   = "${params.DISK_NAME}"
+                // Pass the user-input parameters to the environment so that resizedisk.py can access them.
+                DISK_NAME    = "${params.DISK_NAME}"
                 MACHINE_NAME = "${params.MACHINE_NAME}"
-                TARGET_GB   = "${params.TARGET_GB}"
+                TARGET_GB    = "${params.TARGET_GB}"
             }
             steps {
                 script {
+                    // Based on the branch, either run normally or trigger an intentional failure.
                     if (env.BRANCH_NAME == 'main') {
                         echo "Running resizedisk.py on main branch..."
                         sh 'python3 resizedisk.py'
