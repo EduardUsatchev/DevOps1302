@@ -1,12 +1,15 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.9'
+            args '-u root'
+        }
+    }
 
-    // Disable the default checkout so we can control it ourselves.
     options {
         skipDefaultCheckout(true)
     }
 
-    // Define build parameters for user input.
     parameters {
         string(name: 'DISK_NAME', defaultValue: 'disk1', description: 'Name of the disk')
         string(name: 'MACHINE_NAME', defaultValue: 'machine1', description: 'Name of the machine')
@@ -17,7 +20,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    // Force checkout of the main branch.
                     checkout([
                         $class: 'GitSCM',
                         branches: [[name: 'refs/heads/main']],
@@ -46,7 +48,6 @@ pipeline {
                 script {
                     if (env.BRANCH_NAME == 'main') {
                         echo "Running resizedisk.py on main branch..."
-                        // Use python3 instead of python
                         sh 'python3 resizedisk.py'
                     } else if (env.BRANCH_NAME?.startsWith("feature")) {
                         echo "Running resizedisk.py on a feature branch..."
