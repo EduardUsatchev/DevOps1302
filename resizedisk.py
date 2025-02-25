@@ -12,3 +12,4 @@ machine_name = getenv("MACHINE_NAME")
 target_gb = getenv("TARGET_GB")
 
 disk_resize(disk_name, machine_name, target_gb)
+
