@@ -23,7 +23,7 @@ pipeline {
             steps {
                 script {
                     // Branch-specific logic
-                    if (env.BRANCH_NAME == 'master') {
+                    if (env.BRANCH_NAME == 'main') {
                         echo "Running resizedisk.py on master branch..."
                         sh 'python resizedisk.py'
                     } else if (env.BRANCH_NAME?.startsWith("feature")) {
